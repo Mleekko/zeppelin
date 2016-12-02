@@ -13,18 +13,22 @@
  */
 'use strict';
 
-angular.module('zeppelinWebApp').factory('websocketEvents', function($rootScope, $websocket, $location, $window, baseUrlSrv) {
+angular.module('zeppelinWebApp').factory('websocketEvents', function($rootScope, $websocket, $location, $window, baseUrlSrv, $http) {
   var websocketCalls = {};
+  var pingIntervalId;
 
   websocketCalls.ws = $websocket(baseUrlSrv.getWebsocketUrl());
   websocketCalls.ws.reconnectIfNotNormalClose = true;
 
   websocketCalls.ws.onOpen(function() {
     console.log('Websocket created');
-    $rootScope.$broadcast('setConnectedStatus', true);
-    setInterval(function(){
-      websocketCalls.sendNewEvent({op: 'PING'});
-    }, 10000);
+    $http.get(baseUrlSrv.getRestApiBase() + '/security/ticket').then(function(response) {
+      $rootScope.ticket = angular.fromJson(response.data).body;
+      $rootScope.$broadcast('setConnectedStatus', true);
+      pingIntervalId = setInterval(function(){
+        websocketCalls.sendNewEvent({op: 'PING'});
+      }, 10000);
+    });
   });
 
   websocketCalls.sendNewEvent = function(data) {
@@ -64,7 +68,7 @@ angular.module('zeppelinWebApp').factory('websocketEvents', function($rootScope,
           closable: false,
           closeByBackdrop: false,
           closeByKeyboard: false,
-          title: 'Insufficient privileges', 
+          title: 'Insufficient privileges',
           message: data.info.toString(),
           buttons: [{
               label: 'Login',
@@ -107,6 +111,10 @@ angular.module('zeppelinWebApp').factory('websocketEvents', function($rootScope,
   });
 
   websocketCalls.ws.onClose(function(event) {
+    if (pingIntervalId !== undefined) {
+      clearInterval(pingIntervalId);
+      pingIntervalId = undefined;
+    }
     console.log('close message: ', event);
     $rootScope.$broadcast('setConnectedStatus', false);
   });
