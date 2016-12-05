@@ -249,7 +249,8 @@ while True :
     if final_code:
       # use exec mode to compile the statements except the last statement,
       # so that the last statement's evaluation will be printed to stdout
-      sc.setJobGroup(jobGroup, "Zeppelin")
+      description = intp.getZeppelinContext().makeJobDescription(intp.getZeppelinContext().getInterpreterContext())
+      sc.setJobGroup(jobGroup, description)
       code = compile('\n'.join(final_code), '<stdin>', 'exec', ast.PyCF_ONLY_AST, 1)
       to_run_exec, to_run_single = code.body[:-1], code.body[-1:]
 

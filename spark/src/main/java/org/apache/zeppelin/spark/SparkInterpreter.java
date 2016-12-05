@@ -1111,7 +1111,7 @@ public class SparkInterpreter extends Interpreter {
   public InterpreterResult interpret(String[] lines, InterpreterContext context) {
     synchronized (this) {
       z.setGui(context.getGui());
-      sc.setJobGroup(getJobGroup(context), "Zeppelin", false);
+      ZeppelinContext.assignJobGroup(sc, context);
       InterpreterResult r = interpretInput(lines, context);
       sc.clearJobGroup();
       return r;

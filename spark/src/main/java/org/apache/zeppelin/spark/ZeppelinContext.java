@@ -202,8 +202,8 @@ public class ZeppelinContext {
       Object df, int maxResult) {
     Object[] rows = null;
     Method take;
-    String jobGroup = "zeppelin-" + interpreterContext.getParagraphId();
-    sc.setJobGroup(jobGroup, "Zeppelin", false);
+
+    assignJobGroup(sc, interpreterContext);
 
     try {
       // convert it to DataFrame if it is Dataset, as we will iterate all the records
@@ -278,6 +278,19 @@ public class ZeppelinContext {
     }
     sc.clearJobGroup();
     return msg.toString();
+  }
+
+  public static void assignJobGroup(SparkContext sc, InterpreterContext context) {
+    String jobGroup = "zeppelin-" + context.getParagraphId();
+    String description = makeJobDescription(context);
+    sc.setJobGroup(jobGroup, description, false);
+  }
+
+  public static String makeJobDescription(InterpreterContext context) {
+    return String.format("Zeppelin / %s / %s / %s",
+            context.getAuthenticationInfo().getUser(),
+            context.getNoteId(),
+            context.getParagraphTitle() != null ? context.getParagraphTitle() : "<>");
   }
 
   /**

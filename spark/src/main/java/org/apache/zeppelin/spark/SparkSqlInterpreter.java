@@ -104,7 +104,8 @@ public class SparkSqlInterpreter extends Interpreter {
       sc.setLocalProperty("spark.scheduler.pool", null);
     }
 
-    sc.setJobGroup(getJobGroup(context), "Zeppelin", false);
+    ZeppelinContext.assignJobGroup(sc, context);
+
     Object rdd = null;
     try {
       // method signature of sqlc.sql() is changed
