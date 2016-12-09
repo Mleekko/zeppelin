@@ -21,6 +21,7 @@ limitations under the License.
     <div>
 
       <input class="form-control input-sm"
+             ng-trim="false"
              ng-if="!paragraph.settings.forms[formulaire.name].options"
              ng-enter="runParagraph(getEditorValue())"
              ng-model="paragraph.settings.params[formulaire.name]"
