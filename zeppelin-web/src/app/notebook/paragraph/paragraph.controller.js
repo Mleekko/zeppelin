@@ -355,6 +355,7 @@ angular.module('zeppelinWebApp')
          data.paragraph.status !== $scope.paragraph.status ||
          data.paragraph.jobName !== $scope.paragraph.jobName ||
          data.paragraph.title !== $scope.paragraph.title ||
+         data.paragraph.text !== $scope.paragraph.text ||
          isEmpty(data.paragraph.result) !== isEmpty($scope.paragraph.result) ||
          data.paragraph.errorMessage !== $scope.paragraph.errorMessage ||
          !angular.equals(data.paragraph.settings, $scope.paragraph.settings) ||
@@ -810,7 +811,16 @@ angular.module('zeppelinWebApp')
       });
 
       $scope.handleFocus = function(value, isDigestPass) {
+        if ($scope.paragraphFocused && !value && $scope.dirtyText) {
+          var newParams = angular.copy($scope.paragraph.settings.params);
+          var newConfig = angular.copy($scope.paragraph.config);
+
+          commitParagraph($scope.paragraph.title, $scope.paragraph.text, newConfig, newParams);
+        }
+
         $scope.paragraphFocused = value;
+
+
         if (isDigestPass === false || isDigestPass === undefined) {
           // Protect against error in case digest is already running
           $timeout(function() {
