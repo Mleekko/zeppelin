@@ -710,9 +710,13 @@ angular.module('zeppelinWebApp')
   };
 
   $scope.aceChanged = function() {
-    $scope.dirtyText = $scope.editor.getSession().getValue();
-    $scope.startSaveTimer();
-    $scope.setParagraphMode($scope.editor.getSession(), $scope.dirtyText, $scope.editor.getCursorPosition());
+    var session = $scope.editor.getSession();
+    if ($scope.dirtyText || session.getValue() != $scope.originalText) {
+      $scope.dirtyText = session.getValue();
+      $scope.startSaveTimer();
+      $scope.setParagraphMode(session, $scope.dirtyText, $scope.editor.getCursorPosition());
+    }
+
   };
 
   $scope.aceLoaded = function(_editor) {
@@ -811,11 +815,8 @@ angular.module('zeppelinWebApp')
       });
 
       $scope.handleFocus = function(value, isDigestPass) {
-        if ($scope.paragraphFocused && !value && $scope.dirtyText) {
-          var newParams = angular.copy($scope.paragraph.settings.params);
-          var newConfig = angular.copy($scope.paragraph.config);
-
-          commitParagraph($scope.paragraph.title, $scope.paragraph.text, newConfig, newParams);
+        if ($scope.paragraphFocused && !value) {
+           $scope.saveParagraph();
         }
 
         $scope.paragraphFocused = value;
