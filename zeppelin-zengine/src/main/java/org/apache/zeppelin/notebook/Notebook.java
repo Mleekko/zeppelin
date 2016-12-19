@@ -152,7 +152,8 @@ public class Notebook {
   public Note createNote(List<String> interpreterIds, AuthenticationInfo subject)
       throws IOException {
     NoteInterpreterLoader intpLoader = new NoteInterpreterLoader(replFactory);
-    Note note = new Note(notebookRepo, intpLoader, jobListenerFactory, notebookIndex, credentials);
+    Note note = new Note(notebookRepo, intpLoader, jobListenerFactory, notebookIndex,
+            credentials, this);
     intpLoader.setNoteId(note.id());
     synchronized (notes) {
       notes.put(note.id(), note);
@@ -353,6 +354,7 @@ public class Notebook {
 
     note.setJobListenerFactory(jobListenerFactory);
     note.setNotebookRepo(notebookRepo);
+    note.setNoteBook(this);
 
     Map<String, SnapshotAngularObject> angularObjectSnapshot = new HashMap<>();
 

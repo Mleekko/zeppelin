@@ -17,13 +17,16 @@
 
 package org.apache.zeppelin.notebook;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.StringReader;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.zeppelin.conf.ZeppelinConfiguration;
 import org.apache.zeppelin.display.AngularObject;
@@ -73,6 +76,7 @@ public class Note implements Serializable, JobListener {
   private transient NoteInterpreterLoader replLoader;
   private transient JobListenerFactory jobListenerFactory;
   private transient NotebookRepo repo;
+  private transient Notebook notebook;
   private transient SearchService index;
   private transient ScheduledFuture delayedPersist;
   private transient Credentials credentials;
@@ -95,12 +99,14 @@ public class Note implements Serializable, JobListener {
   public Note() {}
 
   public Note(NotebookRepo repo, NoteInterpreterLoader replLoader,
-      JobListenerFactory jlFactory, SearchService noteIndex, Credentials credentials) {
+      JobListenerFactory jlFactory, SearchService noteIndex,
+              Credentials credentials, Notebook notebook) {
     this.repo = repo;
     this.replLoader = replLoader;
     this.jobListenerFactory = jlFactory;
     this.index = noteIndex;
     this.credentials = credentials;
+    this.notebook = notebook;
     generateId();
   }
 
@@ -162,6 +168,10 @@ public class Note implements Serializable, JobListener {
 
   public void setNotebookRepo(NotebookRepo repo) {
     this.repo = repo;
+  }
+
+  public void setNoteBook(Notebook notebook) {
+    this.notebook = notebook;
   }
 
   public void setIndex(SearchService index) {
@@ -406,6 +416,8 @@ public class Note implements Serializable, JobListener {
     }
   }
 
+  private static Pattern INCLUDE_PATTERN = Pattern.compile("include (['\"])([^/]+)/([^/]+)\\1");
+
   /**
    * Run a single paragraph.
    *
@@ -417,6 +429,18 @@ public class Note implements Serializable, JobListener {
     p.setListener(jobListenerFactory.getParagraphJobListener(this));
     String requiredReplName = p.getRequiredReplName();
     Interpreter intp = replLoader.get(requiredReplName);
+
+    /* include paragraphs from other note(s) */
+    ResolutionResult resolutionResult = resolveParagraphText(this.getId(), p);
+
+    if (resolutionResult.hasIncludes) {
+      p.setEffectiveText(resolutionResult.text);
+    }
+    if (intp == null) {
+      intp = resolutionResult.intp;
+    }
+
+
     if (intp == null) {
       // TODO(jongyoul): Make "%jdbc" configurable from JdbcInterpreter
       if (conf.getUseJdbcAlias() && null != (intp = replLoader.get("jdbc"))) {
@@ -425,13 +449,13 @@ public class Note implements Serializable, JobListener {
         p.setEffectiveText(pText);
       } else {
         String intpExceptionMsg = String.format("%s",
-          p.getJobName()
-          + "'s Interpreter "
-          + requiredReplName + " not found"
+                p.getJobName()
+                        + "'s Interpreter "
+                        + requiredReplName + " not found"
         );
         InterpreterException intpException = new InterpreterException(intpExceptionMsg);
         InterpreterResult intpResult = new InterpreterResult(
-          InterpreterResult.Code.ERROR, intpException.getMessage()
+                InterpreterResult.Code.ERROR, intpException.getMessage()
         );
         p.setReturn(intpResult, intpException);
         p.setStatus(Job.Status.ERROR);
@@ -441,6 +465,84 @@ public class Note implements Serializable, JobListener {
     if (p.getConfig().get("enabled") == null || (Boolean) p.getConfig().get("enabled")) {
       intp.getScheduler().submit(p);
     }
+  }
+
+  private ResolutionResult resolveParagraphText(String noteId, Paragraph p) {
+    String parId = p.getId();
+
+    try {
+      ResolutionResult res = new ResolutionResult();
+
+      String text = p.getText();
+      BufferedReader reader = new BufferedReader(new StringReader(text));
+
+      StringBuilder updatedText = new StringBuilder();
+      String line = reader.readLine();
+      for (; line != null; line = reader.readLine()) {
+        String trimmed = line.trim();
+        if (trimmed.startsWith("include")) {
+          Matcher m = INCLUDE_PATTERN.matcher(trimmed);
+          if (m.matches()) {
+            noteId = m.group(2);
+            parId = m.group(3);
+
+            if (!p.getId().equals(parId)) {
+              res.hasIncludes = true;
+
+              Note includeNote = notebook.getNote(noteId);
+
+              if (includeNote == null) {
+                throw new RuntimeException("Note not found for: " + trimmed);
+              }
+
+              Paragraph includeParagraph = includeNote.getParagraph(parId);
+
+              if (includeParagraph == null) {
+                throw new RuntimeException("Paragraph not found for: " + trimmed);
+              }
+
+              ResolutionResult innerRes = resolveParagraphText(noteId, includeParagraph);
+              updatedText.append(innerRes.text).append('\n');
+
+              if (res.intp == null) {
+                res.intp = replLoader.get(includeParagraph.getRequiredReplName());
+              }
+              if (res.intp == null) {
+                res.intp = innerRes.intp;
+              }
+              continue;
+            }
+          }
+        }
+
+        updatedText.append(line).append('\n');
+      }
+
+      res.text = res.hasIncludes ? updatedText.toString() : text;
+      return res;
+
+    } catch (InterpreterException ie) {
+      throw ie;
+    } catch (Exception e) {
+      logger.error("Couldn't parse  paragraph " + noteId + "/" + parId +
+              " with text: " + p.getText(), e);
+      InterpreterException intpException = new InterpreterException("ERROR: " + e.getMessage());
+      InterpreterResult intpResult = new InterpreterResult(
+              InterpreterResult.Code.ERROR, intpException.getMessage()
+      );
+      p.setReturn(intpResult, intpException);
+      p.setStatus(Status.ERROR);
+      throw intpException;
+    }
+
+
+  }
+
+
+  private static class ResolutionResult {
+    String text;
+    boolean hasIncludes;
+    Interpreter intp;
   }
 
   /**
