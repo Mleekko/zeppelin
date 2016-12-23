@@ -380,14 +380,13 @@ angular.module('zeppelinWebApp')
           if ($scope.dirtyText === data.paragraph.text ) {  // when local update is the same from remote, clear local update
             $scope.paragraph.text = data.paragraph.text;
             $scope.dirtyText = undefined;
-            $scope.originalText = angular.copy(data.paragraph.text);
           } else { // if there're local update, keep it.
             $scope.paragraph.text = $scope.dirtyText;
           }
         } else {
           $scope.paragraph.text = data.paragraph.text;
-          $scope.originalText = angular.copy(data.paragraph.text);
         }
+        $scope.originalText = angular.copy(data.paragraph.text);
       }
 
       /** push the rest */
@@ -711,7 +710,7 @@ angular.module('zeppelinWebApp')
 
   $scope.aceChanged = function() {
     var session = $scope.editor.getSession();
-    if ($scope.dirtyText || session.getValue() !== $scope.originalText) {
+    if ($scope.dirtyText !== undefined || session.getValue() !== $scope.originalText) {
       $scope.dirtyText = session.getValue();
       $scope.startSaveTimer();
       $scope.setParagraphMode(session, $scope.dirtyText, $scope.editor.getCursorPosition());
