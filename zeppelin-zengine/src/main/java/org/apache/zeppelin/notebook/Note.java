@@ -476,6 +476,9 @@ public class Note implements Serializable, JobListener {
       String text = p.getText();
       BufferedReader reader = new BufferedReader(new StringReader(text));
 
+      Set<String> includeForbiddenParagraphs = new HashSet<>();
+      includeForbiddenParagraphs.add(noteId + "/" + parId);
+
       StringBuilder updatedText = new StringBuilder();
       String line = reader.readLine();
       for (; line != null; line = reader.readLine()) {
@@ -486,7 +489,7 @@ public class Note implements Serializable, JobListener {
             noteId = m.group(2);
             parId = m.group(3);
 
-            if (!p.getId().equals(parId)) {
+            if (includeForbiddenParagraphs.add(noteId + "/" + parId)) {
               res.hasIncludes = true;
 
               Note includeNote = notebook.getNote(noteId);
