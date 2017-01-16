@@ -57,7 +57,13 @@ zeppelin.TableData.prototype.loadParagraphResult = function(paragraphResult) {
     for (var j = 0; j < textCols.length; j++) {
       var col = textCols[j];
       if (i === 0) {
-        columnNames.push({name: col, index: j, aggr: 'sum'});
+        if (col !== null && col.startsWith('%column_with_description')) {
+          var jsonStr = col.substr('%column_with_description'.length).trim();
+          var jsonObj = JSON.parse(jsonStr);
+          columnNames.push({name: jsonObj.name, index: j, aggr: 'sum', description: jsonObj.description});
+        } else {
+          columnNames.push({name: col, index: j, aggr: 'sum', description: null});
+        }
       } else {
         cols.push(col);
         cols2.push({key: (columnNames[i]) ? columnNames[i].name : undefined, value: col});

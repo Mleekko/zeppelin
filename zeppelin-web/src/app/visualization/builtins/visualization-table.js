@@ -36,6 +36,7 @@ zeppelin.TableVisualization.prototype.render = function(tableData) {
   var container = this.targetEl.css('height', height).get(0);
   var resultRows = tableData.rows;
   var columnNames = _.pluck(tableData.columns, 'name');
+  var columnDescriptions = _.pluck(tableData.columns, 'description');
 
   if (this.hot) {
     this.hot.destroy();
@@ -50,7 +51,7 @@ zeppelin.TableVisualization.prototype.render = function(tableData) {
   var handsonHelper = new zeppelin.HandsonHelper();
 
   this.hot = new Handsontable(container, handsonHelper.getHandsonTableConfig(
-    this.columns, columnNames, resultRows));
+    this.columns, columnNames, columnDescriptions, resultRows));
   this.hot.validateCells(null);
 };
 

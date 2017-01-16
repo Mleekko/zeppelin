@@ -24,7 +24,8 @@ zeppelin.HandsonHelper = function(columns, rows, comment) {
   this.comment = comment || '';
 };
 
-zeppelin.HandsonHelper.prototype.getHandsonTableConfig = function(columns, columnNames, resultRows) {
+zeppelin.HandsonHelper.prototype.getHandsonTableConfig =
+  function(columns, columnNames, columnDescriptions, resultRows) {
   return {
     colHeaders: columnNames,
     data: resultRows,
@@ -50,6 +51,11 @@ zeppelin.HandsonHelper.prototype.getHandsonTableConfig = function(columns, colum
       return cellProperties;
     },
     afterGetColHeader: function(col, TH) {
+      if (columnDescriptions[col] !== null) {
+        var colHeader = TH.querySelector('.colHeader');
+        colHeader.setAttribute('title', columnDescriptions[col]);
+      }
+
       var instance = this;
       var menu = _buildDropDownMenu(columns[col].type);
       var button = _buildTypeSwitchButton();
