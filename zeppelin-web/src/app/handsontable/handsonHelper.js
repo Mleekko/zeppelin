@@ -25,7 +25,7 @@ zeppelin.HandsonHelper = function(columns, rows, comment) {
 };
 
 zeppelin.HandsonHelper.prototype.getHandsonTableConfig =
-  function(columns, columnNames, columnDescriptions, resultRows) {
+  function(columns, columnNames, columnsData, resultRows) {
   return {
     colHeaders: columnNames,
     data: resultRows,
@@ -51,9 +51,45 @@ zeppelin.HandsonHelper.prototype.getHandsonTableConfig =
       return cellProperties;
     },
     afterGetColHeader: function(col, TH) {
-      if (columnDescriptions[col] !== null) {
-        var colHeader = TH.querySelector('.colHeader');
-        colHeader.setAttribute('title', columnDescriptions[col]);
+      var colHeader = TH.querySelector('.colHeader');
+      if (columnsData[col].description !== null && colHeader.getAttribute('data-title') === null) {
+        colHeader.setAttribute('data-title', columnsData[col].description);
+        colHeader.setAttribute('data-title-pos', columnsData[col].descriptionPos);
+        colHeader.style.zIndex = '1100';
+        colHeader.addEventListener('mouseenter', function() {
+          var elementForPopup = document.getElementById('pupup-for-col-header');
+          if (elementForPopup === null) {
+            elementForPopup = document.createElement('div');
+            elementForPopup.setAttribute('id', 'pupup-for-col-header');
+            elementForPopup.style.position = 'absolute';
+            var span = document.createElement('span');
+            elementForPopup.appendChild(span);
+            span.setAttribute('data-balloon-length', 'xlarge');
+            span.setAttribute('data-balloon-visible', 'true');
+            span.style.zIndex = '1000';
+            span.style.height = '100%';
+            span.style.width = '100%';
+            span.style.display = 'block';
+            span.innerHTML = '&nbsp;';
+            document.querySelector('body').appendChild(elementForPopup);
+          }
+          var spanEl = elementForPopup.querySelector('span');
+          spanEl.setAttribute('data-balloon', this.getAttribute('data-title'));
+          spanEl.setAttribute('data-balloon-pos', this.getAttribute('data-title-pos'));
+          var rect = this.getBoundingClientRect();
+          elementForPopup.style.top = rect.top + 'px';
+          elementForPopup.style.left = rect.left + 'px';
+          elementForPopup.style.height = rect.height + 'px';
+          elementForPopup.style.width = (rect.width + 10) + 'px';
+          elementForPopup.style.display = 'block';
+
+        }.bind(colHeader));
+        colHeader.addEventListener('mouseleave', function() {
+          var elementForPopup = document.getElementById('pupup-for-col-header');
+          if (elementForPopup !== null) {
+            elementForPopup.style.display = 'none';
+          }
+        }.bind(colHeader));
       }
 
       var instance = this;

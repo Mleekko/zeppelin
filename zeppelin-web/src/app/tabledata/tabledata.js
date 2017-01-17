@@ -60,9 +60,11 @@ zeppelin.TableData.prototype.loadParagraphResult = function(paragraphResult) {
         if (col !== null && col.startsWith('%column_with_description')) {
           var jsonStr = col.substr('%column_with_description'.length).trim();
           var jsonObj = JSON.parse(jsonStr);
-          columnNames.push({name: jsonObj.name, index: j, aggr: 'sum', description: jsonObj.description});
+          var descPos = jsonObj.descriptionPos !== undefined ? jsonObj.descriptionPos : 'right';
+          columnNames.push({name: jsonObj.name, index: j, aggr: 'sum', description: jsonObj.description,
+            descriptionPos: descPos});
         } else {
-          columnNames.push({name: col, index: j, aggr: 'sum', description: null});
+          columnNames.push({name: col, index: j, aggr: 'sum', description: null, descriptionPos: null});
         }
       } else {
         cols.push(col);
