@@ -1191,7 +1191,15 @@ angular.module('zeppelinWebApp')
         for (var j = 0; j < textCols.length; j++) {
           var col = textCols[j];
           if (i === 0) {
-            columnNames.push({name:col, index:j, aggr:'sum'});
+            if (col !== null && col.startsWith('%column_with_description')) {
+              var jsonStr = col.substr('%column_with_description'.length).trim();
+              var jsonObj = JSON.parse(jsonStr);
+              var descPos = jsonObj.descriptionPos !== undefined ? jsonObj.descriptionPos : 'right';
+              columnNames.push({name: jsonObj.name, index: j, aggr: 'sum', description: jsonObj.description,
+                descriptionPos: descPos});
+            } else {
+              columnNames.push({name: col, index: j, aggr: 'sum', description: null, descriptionPos: null});
+            }
           } else {
             cols.push(col);
             cols2.push({key: (columnNames[i]) ? columnNames[i].name: undefined, value: col});
@@ -1246,6 +1254,7 @@ angular.module('zeppelinWebApp')
       var container = angular.element('#p' + $scope.paragraph.id + '_table').css('height', height).get(0);
       var resultRows = data.rows;
       var columnNames = _.pluck(data.columnNames, 'name');
+      var columnsData = data.columnNames;
 
       if ($scope.hot) {
         $scope.hot.destroy();
@@ -1280,6 +1289,48 @@ angular.module('zeppelinWebApp')
             }
           };
           return cellProperties;
+        },
+        afterGetColHeader: function(col, TH) {
+          var colHeader = TH.querySelector('.colHeader');
+          if (columnsData[col].description !== null && colHeader.getAttribute('data-title') === null) {
+            colHeader.setAttribute('data-title', columnsData[col].description);
+            colHeader.setAttribute('data-title-pos', columnsData[col].descriptionPos);
+            colHeader.style.zIndex = '1100';
+            colHeader.addEventListener('mouseenter', function () {
+              var elementForPopup = document.getElementById('pupup-for-col-header');
+              if (elementForPopup === null) {
+                elementForPopup = document.createElement('div');
+                elementForPopup.setAttribute('id', 'pupup-for-col-header');
+                elementForPopup.style.position = 'absolute';
+                var span = document.createElement('span');
+                elementForPopup.appendChild(span);
+                span.setAttribute('data-balloon-length', 'xlarge');
+                span.setAttribute('data-balloon-visible', 'true');
+                span.style.zIndex = '1000';
+                span.style.height = '100%';
+                span.style.width = '100%';
+                span.style.display = 'block';
+                span.innerHTML = '&nbsp;';
+                document.querySelector('body').appendChild(elementForPopup);
+              }
+              var spanEl = elementForPopup.querySelector('span');
+              spanEl.setAttribute('data-balloon', this.getAttribute('data-title'));
+              spanEl.setAttribute('data-balloon-pos', this.getAttribute('data-title-pos'));
+              var rect = this.getBoundingClientRect();
+              elementForPopup.style.top = rect.top + 'px';
+              elementForPopup.style.left = rect.left + 'px';
+              elementForPopup.style.height = rect.height + 'px';
+              elementForPopup.style.width = (rect.width + 10) + 'px';
+              elementForPopup.style.display = 'block';
+
+            }.bind(colHeader));
+            colHeader.addEventListener('mouseleave', function () {
+              var elementForPopup = document.getElementById('pupup-for-col-header');
+              if (elementForPopup !== null) {
+                elementForPopup.style.display = 'none';
+              }
+            }.bind(colHeader));
+          }
         }
       });
     };
