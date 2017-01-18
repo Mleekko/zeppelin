@@ -4,6 +4,7 @@ button[data-balloon] {
 
 [data-balloon] {
   position: relative;
+  visibility: hidden;
 }
 
 [data-balloon]:before,
@@ -19,13 +20,14 @@ button[data-balloon] {
   bottom: 100%;
   left: 50%;
   position: absolute;
-  z-index: 10;
+  z-index: 1000;
   -webkit-transform: translate(-50%, 10px);
   -ms-transform: translate(-50%, 10px);
   transform: translate(-50%, 10px);
   -webkit-transform-origin: top;
   -ms-transform-origin: top;
   transform-origin: top;
+  visibility: visible;
 }
 
 [data-balloon]:after {

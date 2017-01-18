@@ -1295,7 +1295,6 @@ angular.module('zeppelinWebApp')
           if (columnsData[col].description !== null && colHeader.getAttribute('data-title') === null) {
             colHeader.setAttribute('data-title', columnsData[col].description);
             colHeader.setAttribute('data-title-pos', columnsData[col].descriptionPos);
-            colHeader.style.zIndex = '1100';
             colHeader.addEventListener('mouseenter', function () {
               var elementForPopup = document.getElementById('pupup-for-col-header');
               if (elementForPopup === null) {
@@ -1306,7 +1305,6 @@ angular.module('zeppelinWebApp')
                 elementForPopup.appendChild(span);
                 span.setAttribute('data-balloon-length', 'xlarge');
                 span.setAttribute('data-balloon-visible', 'true');
-                span.style.zIndex = '1000';
                 span.style.height = '100%';
                 span.style.width = '100%';
                 span.style.display = 'block';
