@@ -1316,8 +1316,10 @@ angular.module('zeppelinWebApp')
               var spanEl = elementForPopup.querySelector('span');
               spanEl.setAttribute('data-balloon', this.getAttribute('data-title'));
               spanEl.setAttribute('data-balloon-pos', this.getAttribute('data-title-pos'));
+
               var rect = this.getBoundingClientRect();
-              elementForPopup.style.top = rect.top + 'px';
+              var bodyRect = document.body.getBoundingClientRect();
+              elementForPopup.style.top =  (rect.top - bodyRect.top) + 'px';
               elementForPopup.style.left = rect.left + 'px';
               elementForPopup.style.height = rect.height + 'px';
               elementForPopup.style.width = (rect.width + 10) + 'px';
