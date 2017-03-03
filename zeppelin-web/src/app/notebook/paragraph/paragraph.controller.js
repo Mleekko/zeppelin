@@ -386,8 +386,9 @@ angular.module('zeppelinWebApp')
         } else {
           $scope.paragraph.text = data.paragraph.text;
         }
-        $scope.originalText = angular.copy(data.paragraph.text);
+
       }
+      $scope.originalText = angular.copy(data.paragraph.text);
 
       /** push the rest */
       $scope.paragraph.aborted = data.paragraph.aborted;
@@ -710,8 +711,9 @@ angular.module('zeppelinWebApp')
 
   $scope.aceChanged = function() {
     var session = $scope.editor.getSession();
-    if ($scope.dirtyText !== undefined || session.getValue() !== $scope.originalText) {
-      $scope.dirtyText = session.getValue();
+    var editorText = session.getValue();
+    if ($scope.dirtyText !== undefined || ($scope.originalText !== undefined && editorText !== $scope.originalText )) {
+      $scope.dirtyText = editorText;
       $scope.startSaveTimer();
       $scope.setParagraphMode(session, $scope.dirtyText, $scope.editor.getCursorPosition());
     }
