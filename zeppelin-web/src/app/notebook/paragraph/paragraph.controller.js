@@ -712,7 +712,11 @@ angular.module('zeppelinWebApp')
   $scope.aceChanged = function() {
     var session = $scope.editor.getSession();
     var editorText = session.getValue();
-    if ($scope.dirtyText !== undefined || ($scope.originalText !== undefined && editorText !== $scope.originalText )) {
+
+    if ($scope.dirtyText !== undefined || editorText !== $scope.originalText ) {
+      if ($scope.originalText === undefined && editorText === '') { // newly added paragraph
+          return;
+      }
       $scope.dirtyText = editorText;
       $scope.startSaveTimer();
       $scope.setParagraphMode(session, $scope.dirtyText, $scope.editor.getCursorPosition());
